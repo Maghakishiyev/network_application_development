@@ -3,13 +3,45 @@
     x:Class="CurrencyMobile.AppShell"
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-    xmlns:local="clr-namespace:CurrencyMobile"
-    Shell.FlyoutBehavior="Flyout"
-    Title="CurrencyMobile">
+    xmlns:views="clr-namespace:CurrencyMobile.Views"
+    Title="Currency Exchange"
+    Shell.FlyoutBehavior="Disabled">
 
+    <!-- Login route (initial) -->
     <ShellContent
-        Title="Home"
-        ContentTemplate="{DataTemplate local:MainPage}"
-        Route="MainPage" />
+        Title="Login"
+        ContentTemplate="{DataTemplate views:LoginPage}"
+        Route="login" />
+
+    <!-- Main app tabs (after login) -->
+    <TabBar>
+        <Tab Title="Wallet" Icon="dotnet_bot.png">
+            <ShellContent
+                Title="Balance"
+                ContentTemplate="{DataTemplate views:BalancePage}"
+                Route="balance" />
+        </Tab>
+
+        <Tab Title="Rates" Icon="dotnet_bot.png">
+            <ShellContent
+                Title="Exchange Rates"
+                ContentTemplate="{DataTemplate views:RatesPage}"
+                Route="rates" />
+        </Tab>
+
+        <Tab Title="Trade" Icon="dotnet_bot.png">
+            <ShellContent
+                Title="Buy &amp; Sell"
+                ContentTemplate="{DataTemplate views:TradePage}"
+                Route="trade" />
+        </Tab>
+
+        <Tab Title="History" Icon="dotnet_bot.png">
+            <ShellContent
+                Title="Transaction History"
+                ContentTemplate="{DataTemplate views:HistoryPage}"
+                Route="history" />
+        </Tab>
+    </TabBar>
 
 </Shell>

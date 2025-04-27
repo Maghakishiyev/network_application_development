@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="CurrencyMobile.Views.RatesPage"
+             xmlns:viewmodel="clr-namespace:CurrencyMobile.ViewModels"
+             x:DataType="viewmodel:RatesViewModel"
+             Title="{Binding Title}">
+    <ScrollView>
+        <VerticalStackLayout Padding="20" Spacing="15">
+
+            <!-- Error Message -->
+            <Frame IsVisible="{Binding IsError}" BackgroundColor="#FEE2E2" 
+                   Padding="10" BorderColor="#FECACA" Margin="0,0,0,10">
+                <Label Text="{Binding ErrorMessage}" TextColor="#B91C1C" FontSize="14" />
+            </Frame>
+
+            <!-- Currency Selector -->
+            <Label Text="Select Currency" FontSize="16" />
+            <Picker ItemsSource="{Binding AvailableCurrencies}"
+                    SelectedItem="{Binding SelectedCurrency}"
+                    Title="Select Currency"
+                    HorizontalOptions="Fill" />
+
+            <!-- Current Rate -->
+            <Frame BorderColor="LightGray" Padding="15" Margin="0,10,0,0">
+                <Grid RowDefinitions="Auto,Auto,Auto" ColumnDefinitions="*,*">
+                    <Label Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2"
+                           Text="Current Rate"
+                           FontSize="18" FontAttributes="Bold"
+                           HorizontalOptions="Center" />
+
+                    <VerticalStackLayout Grid.Row="1" Grid.Column="0" Margin="0,10,0,0">
+                        <Label Text="Mid Rate" FontSize="14" TextColor="Gray" />
+                        <Label Text="{Binding CurrentRate, StringFormat='{0:N4} PLN'}"
+                               FontSize="22" TextColor="#3B82F6" />
+                    </VerticalStackLayout>
+
+                    <VerticalStackLayout Grid.Row="1" Grid.Column="1" Margin="0,10,0,0">
+                        <Label Text="PLN Value" FontSize="14" TextColor="Gray" />
+                        <Label Text="{Binding Path=CurrentRate, StringFormat='1 {0} = {1:N4} PLN', Converter={StaticResource RateToValueConverter}, ConverterParameter={Binding SelectedCurrency}}"
+                               FontSize="16" TextColor="#3B82F6" />
+                    </VerticalStackLayout>
+
+                    <VerticalStackLayout Grid.Row="2" Grid.Column="0" Margin="0,15,0,0">
+                        <Label Text="Buy Rate (Ask)" FontSize="14" TextColor="Gray" />
+                        <Label Text="{Binding BuySellRate.Ask, StringFormat='{0:N4} PLN'}"
+                               FontSize="16" TextColor="#10B981" />
+                    </VerticalStackLayout>
+
+                    <VerticalStackLayout Grid.Row="2" Grid.Column="1" Margin="0,15,0,0">
+                        <Label Text="Sell Rate (Bid)" FontSize="14" TextColor="Gray" />
+                        <Label Text="{Binding BuySellRate.Bid, StringFormat='{0:N4} PLN'}"
+                               FontSize="16" TextColor="#EF4444" />
+                    </VerticalStackLayout>
+                </Grid>
+            </Frame>
+
+            <!-- Historical Rates -->
+            <Label Text="Historical Rates" FontSize="18" FontAttributes="Bold"
+                   Margin="0,15,0,0" />
+
+            <!-- Date Range Selector -->
+            <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto">
+                <Label Grid.Row="0" Grid.Column="0"
+                       Text="Start Date" FontSize="14" />
+                <Label Grid.Row="0" Grid.Column="1"
+                       Text="End Date" FontSize="14" />
+
+                <DatePicker Grid.Row="1" Grid.Column="0"
+                            Date="{Binding StartDate}"
+                            Format="yyyy-MM-dd"
+                            MaximumDate="{Binding EndDate}" />
+
+                <DatePicker Grid.Row="1" Grid.Column="1"
+                            Date="{Binding EndDate}"
+                            Format="yyyy-MM-dd"
+                            MinimumDate="{Binding StartDate}"
+                            MaximumDate="{Binding EndDate}" />
+            </Grid>
+
+            <Button Text="Load Historical Rates"
+                    Command="{Binding LoadHistoricalRatesCommand}"
+                    IsEnabled="{Binding IsBusy, Converter={StaticResource InvertedBoolConverter}}" />
+
+            <!-- Historical Rates List -->
+            <CollectionView ItemsSource="{Binding HistoricalRates}"
+                            HeightRequest="300">
+                <CollectionView.EmptyView>
+                    <VerticalStackLayout HorizontalOptions="Center" VerticalOptions="Center">
+                        <Label Text="No historical rates found" 
+                               FontSize="16" TextColor="Gray" 
+                               HorizontalOptions="Center" />
+                        <Label Text="Try selecting a different date range" 
+                               FontSize="14" TextColor="DarkGray" 
+                               HorizontalOptions="Center" />
+                    </VerticalStackLayout>
+                </CollectionView.EmptyView>
+
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <Frame Margin="0,5" Padding="10" BorderColor="LightGray">
+                            <Grid ColumnDefinitions="*,*">
+                                <Label Grid.Column="0"
+                                       Text="{Binding Date, StringFormat='{0:yyyy-MM-dd}'}"
+                                       FontSize="16" />
+                                <Label Grid.Column="1"
+                                       Text="{Binding Mid, StringFormat='{0:N4} PLN'}"
+                                       FontSize="16" TextColor="#3B82F6"
+                                       HorizontalOptions="End" />
+                            </Grid>
+                        </Frame>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+
+            <!-- Loading Indicator -->
+            <ActivityIndicator IsRunning="{Binding IsBusy}" 
+                               IsVisible="{Binding IsBusy}"
+                               HorizontalOptions="Center"
+                               Margin="0,10,0,0" />
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

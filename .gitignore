@@ -55,3 +55,5 @@ nunit-*.xml
 
 
 CLAUDE.md
+
+*/appsettings.json

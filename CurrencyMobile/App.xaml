@@ -1,7 +1,10 @@
-﻿<?xml version = "1.0" encoding = "UTF-8" ?>
+<?xml version = "1.0" encoding = "UTF-8" ?>
 <Application xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:local="clr-namespace:CurrencyMobile"
+             xmlns:converters="clr-namespace:CurrencyMobile.Converters"
+             xmlns:models="clr-namespace:CurrencyMobile.Models"
+             xmlns:system="clr-namespace:System;assembly=netstandard"
              x:Class="CurrencyMobile.App">
     <Application.Resources>
         <ResourceDictionary>
@@ -9,6 +12,24 @@
                 <ResourceDictionary Source="Resources/Styles/Colors.xaml" />
                 <ResourceDictionary Source="Resources/Styles/Styles.xaml" />
             </ResourceDictionary.MergedDictionaries>
+
+            <!-- Application-wide converters -->
+            <converters:InvertedBoolConverter x:Key="InvertedBoolConverter" />
+            <converters:BoolToStringConverter x:Key="BoolToStringConverter" />
+            <converters:BoolToColorConverter x:Key="BoolToColorConverter" />
+            <converters:BoolToRateConverter x:Key="BoolToRateConverter" />
+            <converters:RateToValueConverter x:Key="RateToValueConverter" />
+            <converters:AccountBalanceConverter x:Key="AccountBalanceConverter" />
+            <converters:TransactionTypeColorConverter x:Key="TransactionTypeColorConverter" />
+
+            <!-- Common styles -->
+            <Style x:Key="OutlineButton" TargetType="Button">
+                <Setter Property="BackgroundColor" Value="Transparent" />
+                <Setter Property="BorderColor" Value="#3B82F6" />
+                <Setter Property="BorderWidth" Value="1" />
+                <Setter Property="TextColor" Value="#3B82F6" />
+            </Style>
+
         </ResourceDictionary>
     </Application.Resources>
 </Application>

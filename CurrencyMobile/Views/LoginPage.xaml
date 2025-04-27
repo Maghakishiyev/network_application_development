@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="CurrencyMobile.Views.LoginPage"
+             xmlns:viewmodel="clr-namespace:CurrencyMobile.ViewModels"
+             x:DataType="viewmodel:LoginViewModel"
+             Title="{Binding Title}">
+    <Grid RowDefinitions="Auto,*,Auto"
+          ColumnDefinitions="*,*"
+          Padding="20">
+
+        <!-- Logo / Header -->
+        <VerticalStackLayout Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2"
+                             HorizontalOptions="Center" Margin="0,30,0,20">
+            <Image Source="dotnet_bot.png" HeightRequest="100" />
+            <Label Text="Currency Exchange" 
+                   HorizontalOptions="Center"
+                   FontSize="28" FontAttributes="Bold" />
+            <Label Text="Login with your User ID" 
+                   HorizontalOptions="Center"
+                   FontSize="18" TextColor="Gray" />
+        </VerticalStackLayout>
+
+        <!-- Main Content -->
+        <VerticalStackLayout Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2"
+                             VerticalOptions="Center" Spacing="20" Margin="0,30">
+            
+            <!-- Error Message -->
+            <Frame IsVisible="{Binding IsError}" BackgroundColor="#FEE2E2" 
+                   Padding="10" BorderColor="#FECACA" Margin="0,0,0,10">
+                <Label Text="{Binding ErrorMessage}" TextColor="#B91C1C" FontSize="14" />
+            </Frame>
+
+            <!-- User ID Entry -->
+            <VerticalStackLayout>
+                <Label Text="User ID" FontSize="14" TextColor="Gray" />
+                <Frame Padding="10" BorderColor="LightGray">
+                    <Entry Placeholder="Enter your MongoDB ObjectId"
+                           Text="{Binding UserId}" 
+                           FontSize="16"/>
+                </Frame>
+            </VerticalStackLayout>
+
+            <!-- Submit Button -->
+            <Button Text="Login"
+                    Command="{Binding LoginCommand}"
+                    IsEnabled="{Binding IsBusy, Converter={StaticResource InvertedBoolConverter}}"
+                    HorizontalOptions="Fill"
+                    Margin="0,20,0,0" />
+            
+            <!-- Activity Indicator -->
+            <ActivityIndicator IsRunning="{Binding IsBusy}" 
+                               IsVisible="{Binding IsBusy}"
+                               HorizontalOptions="Center" />
+        </VerticalStackLayout>
+
+        <!-- Footer -->
+        <Label Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2"
+               Text="© 2025 Currency Exchange App"
+               HorizontalOptions="Center"
+               TextColor="Gray" FontSize="12" />
+    </Grid>
+</ContentPage>

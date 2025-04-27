@@ -392,5 +392,24 @@ namespace CurrencyService
                 throw;
             }
         }
+        
+        public async Task<CurrencyData.Transaction[]> GetTransactionsAsync(string userId)
+        {
+            try
+            {
+                var uid = ObjectId.Parse(userId);
+                var transactions = await _txns.GetByUserIdAsync(uid);
+                
+                _log.LogInformation("Fetched {Count} transactions for user {UserId}", 
+                    transactions.Count, userId);
+                    
+                return transactions.ToArray();
+            }
+            catch (Exception ex)
+            {
+                _log.LogError(ex, "Error fetching transactions: {Message}", ex.Message);
+                throw;
+            }
+        }
     }
 }

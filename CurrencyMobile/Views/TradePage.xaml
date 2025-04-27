@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="CurrencyMobile.Views.TradePage"
+             xmlns:viewmodel="clr-namespace:CurrencyMobile.ViewModels"
+             x:DataType="viewmodel:TradeViewModel"
+             Title="{Binding Title}">
+    <ScrollView>
+        <VerticalStackLayout Padding="20" Spacing="15">
+
+            <!-- Error Message -->
+            <Frame IsVisible="{Binding IsError}" BackgroundColor="#FEE2E2" 
+                   Padding="10" BorderColor="#FECACA" Margin="0,0,0,10">
+                <Label Text="{Binding ErrorMessage}" TextColor="#B91C1C" FontSize="14" />
+            </Frame>
+
+            <!-- Success Message -->
+            <Frame IsVisible="{Binding IsSuccess}" BackgroundColor="#DCFCE7" 
+                   Padding="10" BorderColor="#BBF7D0" Margin="0,0,0,10">
+                <Label Text="{Binding SuccessMessage}" TextColor="#166534" FontSize="14" />
+            </Frame>
+
+            <!-- Trade Type Selector -->
+            <Label Text="Select Operation" FontSize="16" />
+            <Grid ColumnDefinitions="*,*">
+                <RadioButton Grid.Column="0" 
+                             Content="Buy Currency" 
+                             IsChecked="{Binding IsBuying}" 
+                             GroupName="TradeType" />
+                <RadioButton Grid.Column="1" 
+                             Content="Sell Currency" 
+                             IsChecked="{Binding IsBuying, Converter={StaticResource InvertedBoolConverter}}" 
+                             GroupName="TradeType" />
+            </Grid>
+
+            <!-- Currency Selector -->
+            <Label Text="Select Currency" FontSize="16" />
+            <Picker ItemsSource="{Binding AvailableCurrencies}"
+                    SelectedItem="{Binding SelectedCurrency}"
+                    Title="Select Currency"
+                    HorizontalOptions="Fill" />
+
+            <!-- Current Rate Info -->
+            <Frame BorderColor="LightGray" Padding="15" Margin="0,10,0,0">
+                <Grid ColumnDefinitions="*,*">
+                    <VerticalStackLayout Grid.Column="0">
+                        <Label Text="Current Rate" FontSize="14" TextColor="Gray" />
+                        <Label Text="{Binding CurrentRate, StringFormat='{0:N4} PLN'}"
+                               FontSize="20" TextColor="#3B82F6" />
+                    </VerticalStackLayout>
+
+                    <VerticalStackLayout Grid.Column="1">
+                        <Label Text="{Binding IsBuying, Converter={StaticResource BoolToStringConverter}, ConverterParameter='Buy Rate (Ask);Sell Rate (Bid)'}"
+                               FontSize="14" TextColor="Gray" />
+                        <Label Text="{Binding IsBuying, Converter={StaticResource BoolToRateConverter}, ConverterParameter={Binding BuySellRate}, StringFormat='{0:N4} PLN'}"
+                               FontSize="20" 
+                               TextColor="{Binding IsBuying, Converter={StaticResource BoolToColorConverter}, ConverterParameter='#10B981;#EF4444'}" />
+                    </VerticalStackLayout>
+                </Grid>
+            </Frame>
+
+            <!-- Balance Info -->
+            <Frame BorderColor="LightGray" Padding="15">
+                <Grid ColumnDefinitions="*,*">
+                    <VerticalStackLayout Grid.Column="0">
+                        <Label Text="PLN Balance" FontSize="14" TextColor="Gray" />
+                        <Label Text="{Binding CurrentBalance.Balances[PLN], StringFormat='{0:N2} PLN'}"
+                               FontSize="18" TextColor="#3B82F6" />
+                    </VerticalStackLayout>
+
+                    <VerticalStackLayout Grid.Column="1">
+                        <Label Text="{Binding SelectedCurrency, StringFormat='{0} Balance'}" 
+                               FontSize="14" TextColor="Gray" />
+                        <Label Text="{Binding Path=CurrentBalance, Converter={StaticResource AccountBalanceConverter}, ConverterParameter={Binding SelectedCurrency}, StringFormat='{0:N2} {1}'}"
+                               FontSize="18" TextColor="#3B82F6" />
+                    </VerticalStackLayout>
+                </Grid>
+            </Frame>
+
+            <!-- Trade Amount -->
+            <Label Text="{Binding IsBuying, Converter={StaticResource BoolToStringConverter}, ConverterParameter='Amount to Buy;Amount to Sell'}"
+                   FontSize="16" />
+
+            <Grid RowDefinitions="Auto,Auto" ColumnDefinitions="*,Auto,*">
+                <!-- PLN Amount -->
+                <VerticalStackLayout Grid.Row="0" Grid.Column="0">
+                    <Label Text="PLN Amount" FontSize="14" TextColor="Gray" />
+                    <Frame Padding="5" BorderColor="LightGray">
+                        <Entry Text="{Binding AmountPln}"
+                               Keyboard="Numeric"
+                               Placeholder="0.00"
+                               ReturnCommand="{Binding CalculateAmountCommand}"
+                               ReturnCommandParameter="pln_to_foreign" />
+                    </Frame>
+                </VerticalStackLayout>
+
+                <Label Grid.Row="0" Grid.Column="1" Text="=" 
+                       VerticalOptions="Center" HorizontalOptions="Center"
+                       FontSize="24" Margin="10,0" />
+
+                <!-- Foreign Amount -->
+                <VerticalStackLayout Grid.Row="0" Grid.Column="2">
+                    <Label Text="{Binding SelectedCurrency, StringFormat='{0} Amount'}" 
+                           FontSize="14" TextColor="Gray" />
+                    <Frame Padding="5" BorderColor="LightGray">
+                        <Entry Text="{Binding AmountForeign}"
+                               Keyboard="Numeric"
+                               Placeholder="0.00"
+                               ReturnCommand="{Binding CalculateAmountCommand}"
+                               ReturnCommandParameter="foreign_to_pln" />
+                    </Frame>
+                </VerticalStackLayout>
+
+                <!-- Calculate Buttons -->
+                <Button Grid.Row="1" Grid.Column="0"
+                        Text="← Calculate"
+                        Command="{Binding CalculateAmountCommand}"
+                        CommandParameter="pln_to_foreign"
+                        Margin="0,5,5,0" />
+
+                <Button Grid.Row="1" Grid.Column="2"
+                        Text="Calculate →"
+                        Command="{Binding CalculateAmountCommand}"
+                        CommandParameter="foreign_to_pln"
+                        Margin="5,5,0,0" />
+            </Grid>
+
+            <!-- Execute Trade Button -->
+            <Button Text="{Binding IsBuying, Converter={StaticResource BoolToStringConverter}, ConverterParameter='Buy Currency;Sell Currency'}"
+                    Command="{Binding ExecuteTradeCommand}"
+                    IsEnabled="{Binding IsBusy, Converter={StaticResource InvertedBoolConverter}}"
+                    BackgroundColor="{Binding IsBuying, Converter={StaticResource BoolToColorConverter}, ConverterParameter='#10B981;#EF4444'}"
+                    Margin="0,15,0,0" />
+
+            <!-- Refresh Balance Button -->
+            <Button Text="Refresh Balance"
+                    Command="{Binding LoadBalanceCommand}"
+                    IsEnabled="{Binding IsBusy, Converter={StaticResource InvertedBoolConverter}}"
+                    Style="{StaticResource OutlineButton}" />
+
+            <!-- Loading Indicator -->
+            <ActivityIndicator IsRunning="{Binding IsBusy}" 
+                               IsVisible="{Binding IsBusy}"
+                               HorizontalOptions="Center"
+                               Margin="0,10,0,0" />
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>
