@@ -39,6 +39,30 @@ namespace CurrencyService
         [OperationContract]
         Task<GoldDto[]> GetHistoricalGoldPricesAsync(
             DateTime startDate, DateTime endDate);
+            
+        /// <summary>
+        /// Gets a user's account balances for all currencies.
+        /// </summary>
+        [OperationContract]
+        Task<AccountDto> GetAccountAsync(string userId);
+        
+        /// <summary>
+        /// Buys foreign currency using PLN.
+        /// </summary>
+        [OperationContract]
+        Task<TradeResultDto> BuyCurrencyAsync(
+            string userId,
+            string currencyCode,
+            decimal amountPln);
+            
+        /// <summary>
+        /// Sells foreign currency to receive PLN.
+        /// </summary>
+        [OperationContract]
+        Task<TradeResultDto> SellCurrencyAsync(
+            string userId,
+            string currencyCode,
+            decimal amountForeign);
     }
 
     [DataContract]

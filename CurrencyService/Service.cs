@@ -6,22 +6,30 @@ using CoreWCF;
 using Microsoft.Extensions.Logging;
 using System.Collections.Generic;
 using CurrencyData.Models;
+using CurrencyData.Repositories;
+using MongoDB.Bson;
 
 namespace CurrencyService
 {
     public class Service : IService
     {
-        private readonly CurrencyData.Repositories.UserRepository _users;
+        private readonly UserRepository _users;
+        private readonly BalanceRepository _balances;
+        private readonly TransactionRepository _txns;
         private readonly IHttpClientFactory _httpFactory;
         private readonly ILogger<Service> _log;
 
         public Service(
-            CurrencyData.Repositories.UserRepository users,
+            UserRepository users,
+            BalanceRepository balances,
+            TransactionRepository txns,
             IHttpClientFactory httpFactory,
             ILogger<Service> log
         )
         {
             _users = users;
+            _balances = balances;
+            _txns = txns;
             _httpFactory = httpFactory;
             _log = log;
         }
@@ -46,6 +54,13 @@ namespace CurrencyService
 
         public async Task<decimal> GetCurrentRateAsync(string code)
         {
+            // Special case: PLN is the base currency
+            if (code.Equals("PLN", StringComparison.OrdinalIgnoreCase))
+            {
+                _log.LogInformation("PLN is the base currency, rate is 1.0");
+                return 1.0m;
+            }
+            
             // 1. Build the URL
             var url = $"https://api.nbp.pl/api/exchangerates/rates/a/{code}/?format=json";
 
@@ -100,6 +115,20 @@ namespace CurrencyService
         
         public async Task<BuySellDto> GetBuySellRateAsync(string code)
         {
+            // Special case: PLN is the base currency
+            if (code.Equals("PLN", StringComparison.OrdinalIgnoreCase))
+            {
+                var plnRate = new BuySellDto
+                {
+                    Date = DateTime.Today,
+                    Bid = 1.0m,
+                    Ask = 1.0m
+                };
+                
+                _log.LogInformation("PLN is the base currency, bid=1.0, ask=1.0");
+                return plnRate;
+            }
+            
             var url = $"https://api.nbp.pl/api/exchangerates/rates/c/{code}/?format=json";
             var client = _httpFactory.CreateClient();
             var resp = await client.GetAsync(url);
@@ -109,7 +138,7 @@ namespace CurrencyService
             using var doc = await JsonDocument.ParseAsync(stream);
             var root = doc.RootElement.GetProperty("rates")[0];
 
-            var result = new BuySellDto
+            var foreignRate = new BuySellDto
             {
                 Date = root.GetProperty("effectiveDate").GetDateTime(),
                 Bid = root.GetProperty("bid").GetDecimal(),
@@ -117,8 +146,8 @@ namespace CurrencyService
             };
             
             _log.LogInformation("Fetched buy/sell rate for {Code}: bid={Bid}, ask={Ask}", 
-                code, result.Bid, result.Ask);
-            return result;
+                code, foreignRate.Bid, foreignRate.Ask);
+            return foreignRate;
         }
         
         public async Task<GoldDto> GetCurrentGoldPriceAsync()
@@ -165,6 +194,203 @@ namespace CurrencyService
 
             _log.LogInformation("Fetched historical gold prices: {Count} data points", list.Count);
             return list.ToArray();
+        }
+        
+        public async Task<AccountDto> GetAccountAsync(string userId)
+        {
+            var uid = ObjectId.Parse(userId);
+            
+            // Get all user balances in one go with our new model
+            var balance = await _balances.GetUserBalanceAsync(uid);
+
+            _log.LogInformation("Fetched balances for user {UserId}", userId);
+            
+            // Create a new dictionary to be safe - we don't want to expose
+            // our internal object directly
+            var balanceDict = new Dictionary<string, decimal>();
+            
+            // Make sure we at least show USD, EUR, and PLN even if zero
+            balanceDict["USD"] = balance.GetAmount("USD");
+            balanceDict["EUR"] = balance.GetAmount("EUR");
+            balanceDict["PLN"] = balance.GetAmount("PLN");
+            
+            // Add any other currencies the user might have
+            foreach (var pair in balance.Currencies)
+            {
+                if (!balanceDict.ContainsKey(pair.Key))
+                {
+                    balanceDict[pair.Key] = pair.Value;
+                }
+            }
+            
+            return new AccountDto
+            {
+                UserId = userId,
+                Balances = balanceDict
+            };
+        }
+        
+        public async Task<TradeResultDto> BuyCurrencyAsync(
+            string userId, string currencyCode, decimal amountPln)
+        {
+            var uid = ObjectId.Parse(userId);
+            var timestamp = DateTime.UtcNow;
+            
+            try
+            {
+                // Special handling for PLN (for initial balance/top-up)
+                if (currencyCode.Equals("PLN", StringComparison.OrdinalIgnoreCase))
+                {
+                    // Add to PLN balance directly
+                    await _balances.AdjustBalanceAsync(uid, "PLN", amountPln);
+                    
+                    // Log and return
+                    _log.LogInformation("User {UserId} deposited {Amount} PLN (initial balance)", userId, amountPln);
+                    
+                    return new TradeResultDto
+                    {
+                        UserId = userId,
+                        CurrencyCode = "PLN",
+                        AmountForeign = amountPln,
+                        AmountPln = amountPln,
+                        Rate = 1.0m,
+                        Timestamp = timestamp
+                    };
+                }
+                
+                // Normal currency purchase
+                var rate = await GetCurrentRateAsync(currencyCode);
+                var amountForeign = amountPln / rate;
+    
+                // Check PLN balance is sufficient
+                var plnBalance = await _balances.GetAmountAsync(uid, "PLN");
+                if (plnBalance < amountPln)
+                {
+                    throw new InvalidOperationException($"Insufficient PLN balance: {plnBalance} < {amountPln}");
+                }
+                
+                // Update balances in one transaction
+                await _balances.AdjustBalanceAsync(uid, "PLN", -amountPln);
+                await _balances.AdjustBalanceAsync(uid, currencyCode, amountForeign);
+    
+                // Record transaction
+                try 
+                {
+                    var tx = new CurrencyData.Transaction
+                    {
+                        Id = ObjectId.GenerateNewId(),
+                        UserId = uid,
+                        Type = "buy",
+                        CurrencyCode = currencyCode,
+                        Amount = amountForeign,
+                        Timestamp = timestamp
+                    };
+                    await _txns.CreateAsync(tx);
+                }
+                catch (Exception ex)
+                {
+                    // Log but don't fail if transaction recording fails
+                    _log.LogWarning("Failed to record transaction: {Error}", ex.Message);
+                }
+    
+                _log.LogInformation("User {UserId} bought {Amount} {Currency} for {Pln} PLN at {Rate}", 
+                    userId, amountForeign, currencyCode, amountPln, rate);
+                    
+                return new TradeResultDto
+                {
+                    UserId = userId,
+                    CurrencyCode = currencyCode,
+                    AmountForeign = amountForeign,
+                    AmountPln = amountPln,
+                    Rate = rate,
+                    Timestamp = timestamp
+                };
+            }
+            catch (Exception ex)
+            {
+                _log.LogError(ex, "Error in BuyCurrencyAsync: {Message}", ex.Message);
+                throw;
+            }
+        }
+        
+        public async Task<TradeResultDto> SellCurrencyAsync(
+            string userId, string currencyCode, decimal amountForeign)
+        {
+            var uid = ObjectId.Parse(userId);
+            var timestamp = DateTime.UtcNow;
+            
+            try
+            {
+                // Special handling for PLN
+                if (currencyCode.Equals("PLN", StringComparison.OrdinalIgnoreCase))
+                {
+                    // For the PLN case, just return a simulated result without actual withdrawal
+                    _log.LogInformation("User {UserId} simulated withdrawal of {Amount} PLN", userId, amountForeign);
+                    
+                    return new TradeResultDto
+                    {
+                        UserId = userId,
+                        CurrencyCode = "PLN",
+                        AmountForeign = amountForeign,
+                        AmountPln = amountForeign,
+                        Rate = 1.0m,
+                        Timestamp = timestamp
+                    };
+                }
+                
+                // Normal sell operation
+                var rate = await GetCurrentRateAsync(currencyCode);
+                var amountPln = amountForeign * rate;
+    
+                // Check foreign currency balance
+                var foreignBalance = await _balances.GetAmountAsync(uid, currencyCode);
+                if (foreignBalance < amountForeign)
+                {
+                    throw new InvalidOperationException($"Insufficient {currencyCode} balance: {foreignBalance} < {amountForeign}");
+                }
+                
+                // Update balances in one transaction
+                await _balances.AdjustBalanceAsync(uid, currencyCode, -amountForeign);
+                await _balances.AdjustBalanceAsync(uid, "PLN", amountPln);
+    
+                // Record transaction
+                try 
+                {
+                    var tx = new CurrencyData.Transaction
+                    {
+                        Id = ObjectId.GenerateNewId(),
+                        UserId = uid,
+                        Type = "sell",
+                        CurrencyCode = currencyCode,
+                        Amount = amountForeign,
+                        Timestamp = timestamp
+                    };
+                    await _txns.CreateAsync(tx);
+                }
+                catch (Exception ex) 
+                {
+                    // Log but don't fail if transaction recording fails
+                    _log.LogWarning("Failed to record transaction: {Error}", ex.Message);
+                }
+    
+                _log.LogInformation("User {UserId} sold {Amount} {Currency} for {Pln} PLN at {Rate}", 
+                    userId, amountForeign, currencyCode, amountPln, rate);
+                    
+                return new TradeResultDto
+                {
+                    UserId = userId,
+                    CurrencyCode = currencyCode,
+                    AmountForeign = amountForeign,
+                    AmountPln = amountPln,
+                    Rate = rate,
+                    Timestamp = timestamp
+                };
+            }
+            catch (Exception ex)
+            {
+                _log.LogError(ex, "Error in SellCurrencyAsync: {Message}", ex.Message);
+                throw;
+            }
         }
     }
 }

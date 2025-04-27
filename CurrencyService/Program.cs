@@ -5,7 +5,8 @@ using CoreWCF.Description;
 using MongoDB.Driver;
 using CurrencyData;
 using Microsoft.Extensions.Options;
-using CurrencyService; 
+using CurrencyService;
+using CurrencyData.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -30,11 +31,10 @@ builder.Services.AddScoped(sp =>
     sp.GetRequiredService<IMongoClient>()
       .GetDatabase(mongoSettings.DatabaseName));
 
-// 4. Register your repositories
-// We'll implement repositories when needed
-builder.Services.AddScoped<CurrencyData.Repositories.UserRepository>();
-// builder.Services.AddScoped<BalanceRepository>();
-// builder.Services.AddScoped<TransactionRepository>();
+// 4. Register repositories
+builder.Services.AddScoped<UserRepository>();
+builder.Services.AddScoped<BalanceRepository>();
+builder.Services.AddScoped<TransactionRepository>();
 
 // 5. Register your WCF service implementation 
 builder.Services.AddScoped<Service>();
@@ -44,7 +44,11 @@ var app = builder.Build();
 // 6. Configure WCF endpoints
 app.UseServiceModel(serviceBuilder =>
 {
-    serviceBuilder.AddService<Service>();
+    serviceBuilder.AddService<Service>(serviceOptions =>
+    {
+        // Enable detailed error messages for debugging
+        serviceOptions.DebugBehavior.IncludeExceptionDetailInFaults = true;
+    });
 
     var binding = new BasicHttpBinding();
     binding.Security.Mode = BasicHttpSecurityMode.None;
