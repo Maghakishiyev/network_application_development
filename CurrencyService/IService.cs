@@ -2,6 +2,7 @@
 using System;
 using System.Runtime.Serialization;
 using System.Threading.Tasks;
+using CurrencyData.Models;
 
 namespace CurrencyService
 {
@@ -16,6 +17,28 @@ namespace CurrencyService
 
         [OperationContract]
         Task<decimal> GetCurrentRateAsync(string code);
+        
+        /// <summary>
+        /// Gets a series of "mid" exchange rates for the given currency between two dates (inclusive).
+        /// </summary>
+        [OperationContract]
+        Task<RateDto[]> GetHistoricalRatesAsync(
+            string code,
+            DateTime startDate,
+            DateTime endDate);
+            
+        /// <summary>
+        /// Gets the current buy (bid) and sell (ask) prices for the given currency (table C).
+        /// </summary>
+        [OperationContract]
+        Task<BuySellDto> GetBuySellRateAsync(string code);
+        
+        [OperationContract]
+        Task<GoldDto> GetCurrentGoldPriceAsync();
+
+        [OperationContract]
+        Task<GoldDto[]> GetHistoricalGoldPricesAsync(
+            DateTime startDate, DateTime endDate);
     }
 
     [DataContract]
