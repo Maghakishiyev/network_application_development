@@ -16,6 +16,12 @@ namespace CurrencyService
 
         [OperationContract]
         CompositeType GetDataUsingDataContract(CompositeType composite);
+        
+        [OperationContract]
+        Task<UserDto> AuthenticateAsync(string email, string password);
+        
+        [OperationContract]
+        Task<UserDto> RegisterUserAsync(string email, string password);
 
         [OperationContract]
         Task<decimal> GetCurrentRateAsync(string code);

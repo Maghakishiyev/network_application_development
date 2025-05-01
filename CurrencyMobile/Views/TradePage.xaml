@@ -52,8 +52,8 @@
                     <VerticalStackLayout Grid.Column="1">
                         <Label Text="{Binding IsBuying, Converter={StaticResource BoolToStringConverter}, ConverterParameter='Buy Rate (Ask);Sell Rate (Bid)'}"
                                FontSize="14" TextColor="Gray" />
-                        <Label Text="{Binding IsBuying, Converter={StaticResource BoolToRateConverter}, ConverterParameter={Binding BuySellRate}, StringFormat='{0:N4} PLN'}"
-                               FontSize="20" 
+                        <Label FontSize="20" 
+                               Text="{Binding Path=TradeRate, StringFormat='{0:N4} PLN'}"
                                TextColor="{Binding IsBuying, Converter={StaticResource BoolToColorConverter}, ConverterParameter='#10B981;#EF4444'}" />
                     </VerticalStackLayout>
                 </Grid>
@@ -71,26 +71,31 @@
                     <VerticalStackLayout Grid.Column="1">
                         <Label Text="{Binding SelectedCurrency, StringFormat='{0} Balance'}" 
                                FontSize="14" TextColor="Gray" />
-                        <Label Text="{Binding Path=CurrentBalance, Converter={StaticResource AccountBalanceConverter}, ConverterParameter={Binding SelectedCurrency}, StringFormat='{0:N2} {1}'}"
-                               FontSize="18" TextColor="#3B82F6" />
+                               
+                        <!-- For USD and other currency balances -->
+                        <StackLayout Orientation="Horizontal">
+                            <Label Text="{Binding CurrencyBalance, StringFormat='{0:N2}'}"
+                                   FontSize="18" TextColor="#3B82F6" />
+                            <Label Text=" " FontSize="18" />
+                            <Label Text="{Binding SelectedCurrency}"
+                                   FontSize="18" TextColor="#3B82F6" />
+                        </StackLayout>
+                        
                     </VerticalStackLayout>
                 </Grid>
             </Frame>
 
             <!-- Trade Amount -->
-            <Label Text="{Binding IsBuying, Converter={StaticResource BoolToStringConverter}, ConverterParameter='Amount to Buy;Amount to Sell'}"
-                   FontSize="16" />
+            <Label Text="{Binding TradeAmountLabel}" FontSize="16" />
 
-            <Grid RowDefinitions="Auto,Auto" ColumnDefinitions="*,Auto,*">
+            <Grid RowDefinitions="Auto" ColumnDefinitions="*,Auto,*">
                 <!-- PLN Amount -->
                 <VerticalStackLayout Grid.Row="0" Grid.Column="0">
                     <Label Text="PLN Amount" FontSize="14" TextColor="Gray" />
                     <Frame Padding="5" BorderColor="LightGray">
-                        <Entry Text="{Binding AmountPln}"
+                        <Entry Text="{Binding AmountPln, StringFormat='{0:0.####}'}"
                                Keyboard="Numeric"
-                               Placeholder="0.00"
-                               ReturnCommand="{Binding CalculateAmountCommand}"
-                               ReturnCommandParameter="pln_to_foreign" />
+                               Placeholder="0.0000" />
                     </Frame>
                 </VerticalStackLayout>
 
@@ -103,31 +108,16 @@
                     <Label Text="{Binding SelectedCurrency, StringFormat='{0} Amount'}" 
                            FontSize="14" TextColor="Gray" />
                     <Frame Padding="5" BorderColor="LightGray">
-                        <Entry Text="{Binding AmountForeign}"
-                               Keyboard="Numeric"
-                               Placeholder="0.00"
-                               ReturnCommand="{Binding CalculateAmountCommand}"
-                               ReturnCommandParameter="foreign_to_pln" />
+                        <Entry Text="{Binding AmountForeign, StringFormat='{0:0.####}'}"
+                               Keyboard="Numeric" 
+                               Placeholder="0.0000" />
                     </Frame>
                 </VerticalStackLayout>
-
-                <!-- Calculate Buttons -->
-                <Button Grid.Row="1" Grid.Column="0"
-                        Text="← Calculate"
-                        Command="{Binding CalculateAmountCommand}"
-                        CommandParameter="pln_to_foreign"
-                        Margin="0,5,5,0" />
-
-                <Button Grid.Row="1" Grid.Column="2"
-                        Text="Calculate →"
-                        Command="{Binding CalculateAmountCommand}"
-                        CommandParameter="foreign_to_pln"
-                        Margin="5,5,0,0" />
             </Grid>
 
             <!-- Execute Trade Button -->
-            <Button Text="{Binding IsBuying, Converter={StaticResource BoolToStringConverter}, ConverterParameter='Buy Currency;Sell Currency'}"
-                    Command="{Binding ExecuteTradeCommand}"
+            <Button Command="{Binding ExecuteTradeCommand}"
+                    Text="{Binding TradeButtonText}"
                     IsEnabled="{Binding IsBusy, Converter={StaticResource InvertedBoolConverter}}"
                     BackgroundColor="{Binding IsBuying, Converter={StaticResource BoolToColorConverter}, ConverterParameter='#10B981;#EF4444'}"
                     Margin="0,15,0,0" />

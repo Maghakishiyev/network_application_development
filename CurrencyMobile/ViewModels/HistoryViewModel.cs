@@ -20,7 +20,7 @@ namespace CurrencyMobile.ViewModels
         private bool _isRefreshing;
 
         [ObservableProperty]
-        private string _errorMessage;
+        private string _errorMessage = string.Empty;
 
         [ObservableProperty]
         private bool _isError;

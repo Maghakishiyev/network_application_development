@@ -3,8 +3,17 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="CurrencyMobile.Views.LoginPage"
              xmlns:viewmodel="clr-namespace:CurrencyMobile.ViewModels"
+             xmlns:converters="clr-namespace:CurrencyMobile.Converters"
              x:DataType="viewmodel:LoginViewModel"
              Title="{Binding Title}">
+
+    <ContentPage.Resources>
+        <converters:InvertedBoolConverter x:Key="InvertedBoolConverter" />
+        <converters:BoolToStringConverter x:Key="BoolToStringConverter" 
+                                         TrueValue="Already have an account? Sign in"
+                                         FalseValue="Don't have an account? Sign up" />
+    </ContentPage.Resources>
+
     <Grid RowDefinitions="Auto,*,Auto"
           ColumnDefinitions="*,*"
           Padding="20">
@@ -16,7 +25,7 @@
             <Label Text="Currency Exchange" 
                    HorizontalOptions="Center"
                    FontSize="28" FontAttributes="Bold" />
-            <Label Text="Login with your User ID" 
+            <Label Text="{Binding IsRegistration, Converter={StaticResource BoolToStringConverter}, ConverterParameter='Sign Up|Sign In'}" 
                    HorizontalOptions="Center"
                    FontSize="18" TextColor="Gray" />
         </VerticalStackLayout>
@@ -31,22 +40,58 @@
                 <Label Text="{Binding ErrorMessage}" TextColor="#B91C1C" FontSize="14" />
             </Frame>
 
-            <!-- User ID Entry -->
+            <!-- Email Entry -->
             <VerticalStackLayout>
-                <Label Text="User ID" FontSize="14" TextColor="Gray" />
+                <Label Text="Email" FontSize="14" TextColor="Gray" />
                 <Frame Padding="10" BorderColor="LightGray">
-                    <Entry Placeholder="Enter your MongoDB ObjectId"
-                           Text="{Binding UserId}" 
+                    <Entry Placeholder="Enter your email address"
+                           Text="{Binding Email}" 
+                           Keyboard="Email"
+                           FontSize="16"/>
+                </Frame>
+            </VerticalStackLayout>
+
+            <!-- Password Entry -->
+            <VerticalStackLayout>
+                <Label Text="Password" FontSize="14" TextColor="Gray" />
+                <Frame Padding="10" BorderColor="LightGray">
+                    <Entry Placeholder="Enter your password"
+                           Text="{Binding Password}" 
+                           IsPassword="True"
+                           FontSize="16"/>
+                </Frame>
+            </VerticalStackLayout>
+            
+            <!-- Confirm Password Entry (only visible in registration mode) -->
+            <VerticalStackLayout IsVisible="{Binding IsRegistration}">
+                <Label Text="Confirm Password" FontSize="14" TextColor="Gray" />
+                <Frame Padding="10" BorderColor="LightGray">
+                    <Entry Placeholder="Confirm your password"
+                           Text="{Binding ConfirmPassword}" 
+                           IsPassword="True"
                            FontSize="16"/>
                 </Frame>
             </VerticalStackLayout>
 
             <!-- Submit Button -->
-            <Button Text="Login"
-                    Command="{Binding LoginCommand}"
+            <Button Text="{Binding IsRegistration, Converter={StaticResource BoolToStringConverter}, ConverterParameter='Sign Up|Sign In'}"
+                    Command="{Binding SubmitCommand}"
                     IsEnabled="{Binding IsBusy, Converter={StaticResource InvertedBoolConverter}}"
                     HorizontalOptions="Fill"
-                    Margin="0,20,0,0" />
+                    Margin="0,20,0,10" />
+            
+            <!-- Toggle Registration Mode -->
+            <!-- Use a Label instead of a Button since it might be more reliable for transparent buttons -->
+            <Label Text="{Binding IsRegistration, Converter={StaticResource BoolToStringConverter}}"
+                  HorizontalOptions="Center"
+                  FontSize="14"
+                  TextColor="Blue"
+                  TextDecorations="Underline"
+                  Padding="10">
+                <Label.GestureRecognizers>
+                    <TapGestureRecognizer Command="{Binding ToggleRegistrationCommand}" />
+                </Label.GestureRecognizers>
+            </Label>
             
             <!-- Activity Indicator -->
             <ActivityIndicator IsRunning="{Binding IsBusy}" 

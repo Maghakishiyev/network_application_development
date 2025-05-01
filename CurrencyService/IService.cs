@@ -3,6 +3,7 @@ using System;
 using System.Runtime.Serialization;
 using System.Threading.Tasks;
 using CurrencyData.Models;
+using CurrencyData;
 
 namespace CurrencyService
 {
@@ -14,6 +15,18 @@ namespace CurrencyService
 
         [OperationContract]
         CompositeType GetDataUsingDataContract(CompositeType composite);
+
+        /// <summary>
+        /// Authenticates a user with email and password
+        /// </summary>
+        [OperationContract]
+        Task<UserDto> AuthenticateAsync(string email, string password);
+        
+        /// <summary>
+        /// Registers a new user with email and password
+        /// </summary>
+        [OperationContract]
+        Task<UserDto> RegisterUserAsync(string email, string password);
 
         [OperationContract]
         Task<decimal> GetCurrentRateAsync(string code);

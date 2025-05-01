@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using CurrencyData.Models;
 using CurrencyData.Repositories;
 using MongoDB.Bson;
+using CurrencyData;
 
 namespace CurrencyService
 {
@@ -32,6 +33,93 @@ namespace CurrencyService
             _txns = txns;
             _httpFactory = httpFactory;
             _log = log;
+        }
+        
+        public async Task<UserDto> AuthenticateAsync(string email, string password)
+        {
+            try
+            {
+                _log.LogInformation("Authenticating user with email: {Email}", email);
+                
+                var user = await _users.AuthenticateAsync(email, password);
+                if (user == null)
+                {
+                    _log.LogWarning("Authentication failed for email: {Email}", email);
+                    throw new FaultException("Invalid email or password");
+                }
+                
+                _log.LogInformation("User authenticated successfully: {Email}", email);
+                
+                return new UserDto
+                {
+                    Id = user.Id.ToString(),
+                    Email = user.Email,
+                    Username = user.Username,
+                    CreatedAt = user.CreatedAt
+                };
+            }
+            catch (FaultException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _log.LogError(ex, "Error in AuthenticateAsync: {Message}", ex.Message);
+                throw new FaultException($"Authentication error: {ex.Message}");
+            }
+        }
+        
+        public async Task<UserDto> RegisterUserAsync(string email, string password)
+        {
+            try
+            {
+                _log.LogInformation("Registering new user with email: {Email}", email);
+                
+                // Validate input
+                if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
+                {
+                    throw new FaultException("Email and password are required");
+                }
+                
+                if (password.Length < 6)
+                {
+                    throw new FaultException("Password must be at least 6 characters long");
+                }
+                
+                // Create user
+                var user = await _users.CreateUserAsync(email, password);
+                
+                // Initialize an empty balance for the new user
+                await _balances.CreateAsync(new Balance
+                {
+                    Id = ObjectId.GenerateNewId(),
+                    UserId = user.Id,
+                    Currencies = new Dictionary<string, decimal>
+                    {
+                        { "PLN", 0 }
+                    }
+                });
+                
+                _log.LogInformation("User registered successfully: {Email}, {UserId}", email, user.Id);
+                
+                return new UserDto
+                {
+                    Id = user.Id.ToString(),
+                    Email = user.Email,
+                    Username = user.Username,
+                    CreatedAt = user.CreatedAt
+                };
+            }
+            catch (InvalidOperationException ex)
+            {
+                _log.LogWarning("Registration failed: {Message}", ex.Message);
+                throw new FaultException(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                _log.LogError(ex, "Error in RegisterUserAsync: {Message}", ex.Message);
+                throw new FaultException($"Registration error: {ex.Message}");
+            }
         }
 
         public string GetData(int value)

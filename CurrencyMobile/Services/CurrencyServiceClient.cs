@@ -14,10 +14,29 @@ namespace CurrencyMobile.Services
 
         public CurrencyServiceClient()
         {
-            // When running on a simulator or Mac, use the loopback adapter IP instead of localhost
-            // This is because localhost in the simulator context refers to the simulator itself
-            _serviceUrl = "http://127.0.0.1:5000/"; // Using IP address instead of localhost
-            
+            string serviceUrl;
+
+            // When running on Android emulator, use the special IP 10.0.2.2 which points to the host machine
+            if (DeviceInfo.Platform == DevicePlatform.Android)
+            {
+                serviceUrl = "http://10.0.2.2:5001/";
+                Console.WriteLine($"Running on Android, using service URL: {serviceUrl}");
+            }
+            // For iOS simulator
+            else if (DeviceInfo.Platform == DevicePlatform.iOS && DeviceInfo.DeviceType == DeviceType.Virtual)
+            {
+                serviceUrl = "http://localhost:5001/";
+                Console.WriteLine($"Running on iOS simulator, using service URL: {serviceUrl}");
+            }
+            // For everything else (including desktop)
+            else
+            {
+                serviceUrl = "http://localhost:5001/";
+                Console.WriteLine($"Running on {DeviceInfo.Platform}, using service URL: {serviceUrl}");
+            }
+
+            _serviceUrl = serviceUrl;
+
             _binding = new BasicHttpBinding(BasicHttpSecurityMode.None)
             {
                 MaxReceivedMessageSize = 10_000_000,
@@ -30,6 +49,48 @@ namespace CurrencyMobile.Services
                 TextEncoding = System.Text.Encoding.UTF8,
                 UseDefaultWebProxy = true
             };
+        }
+        
+        public async Task<UserDto> AuthenticateAsync(string email, string password)
+        {
+            try
+            {
+                var channel = CreateChannel<CurrencyService.IService>();
+                var user = await channel.AuthenticateAsync(email, password);
+                
+                return new UserDto
+                {
+                    Id = user.Id,
+                    Email = user.Email,
+                    Username = user.Username
+                };
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Authentication error: {ex.Message}");
+                throw;
+            }
+        }
+        
+        public async Task<UserDto> RegisterUserAsync(string email, string password)
+        {
+            try
+            {
+                var channel = CreateChannel<CurrencyService.IService>();
+                var user = await channel.RegisterUserAsync(email, password);
+                
+                return new UserDto
+                {
+                    Id = user.Id,
+                    Email = user.Email,
+                    Username = user.Username
+                };
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Registration error: {ex.Message}");
+                throw;
+            }
         }
 
         private T CreateChannel<T>() where T : class

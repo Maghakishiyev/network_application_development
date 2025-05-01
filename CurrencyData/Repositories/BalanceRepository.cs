@@ -77,5 +77,30 @@ namespace CurrencyData.Repositories
             var filter = Builders<Balance>.Filter.Eq(b => b.UserId, balance.UserId);
             return _balances.ReplaceOneAsync(filter, balance, new ReplaceOptions { IsUpsert = true });
         }
+        
+        // Create a new balance document
+        public async Task CreateAsync(Balance balance)
+        {
+            // Make sure we have a valid ID
+            if (balance.Id == ObjectId.Empty)
+            {
+                balance.Id = ObjectId.GenerateNewId();
+            }
+            
+            // Check if a balance already exists for this user
+            var existingFilter = Builders<Balance>.Filter.Eq(b => b.UserId, balance.UserId);
+            var existing = await _balances.Find(existingFilter).FirstOrDefaultAsync();
+            
+            if (existing != null)
+            {
+                // Update existing balance
+                await _balances.ReplaceOneAsync(existingFilter, balance);
+            }
+            else
+            {
+                // Insert new balance
+                await _balances.InsertOneAsync(balance);
+            }
+        }
     }
 }

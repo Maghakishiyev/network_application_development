@@ -37,8 +37,14 @@
 
                     <VerticalStackLayout Grid.Row="1" Grid.Column="1" Margin="0,10,0,0">
                         <Label Text="PLN Value" FontSize="14" TextColor="Gray" />
-                        <Label Text="{Binding Path=CurrentRate, StringFormat='1 {0} = {1:N4} PLN', Converter={StaticResource RateToValueConverter}, ConverterParameter={Binding SelectedCurrency}}"
-                               FontSize="16" TextColor="#3B82F6" />
+                        <Label FontSize="16" TextColor="#3B82F6">
+                            <Label.Text>
+                                <MultiBinding StringFormat="1 {0} = {1:N4} PLN">
+                                    <Binding Path="SelectedCurrency" />
+                                    <Binding Path="CurrentRate" />
+                                </MultiBinding>
+                            </Label.Text>
+                        </Label>
                     </VerticalStackLayout>
 
                     <VerticalStackLayout Grid.Row="2" Grid.Column="0" Margin="0,15,0,0">
@@ -83,6 +89,10 @@
                     IsEnabled="{Binding IsBusy, Converter={StaticResource InvertedBoolConverter}}" />
 
             <!-- Historical Rates List -->
+            <Label Text="{Binding HistoricalRates.Count, StringFormat='Found {0} Historical Rates'}" 
+                   IsVisible="{Binding HistoricalRates.Count, Converter={StaticResource BoolConverter}}"
+                   FontSize="14" TextColor="Gray" />
+                   
             <CollectionView ItemsSource="{Binding HistoricalRates}"
                             HeightRequest="300">
                 <CollectionView.EmptyView>
@@ -97,15 +107,15 @@
                 </CollectionView.EmptyView>
 
                 <CollectionView.ItemTemplate>
-                    <DataTemplate>
+                    <DataTemplate x:DataType="viewmodel:RatesViewModel+RateViewModel">
                         <Frame Margin="0,5" Padding="10" BorderColor="LightGray">
                             <Grid ColumnDefinitions="*,*">
                                 <Label Grid.Column="0"
                                        Text="{Binding Date, StringFormat='{0:yyyy-MM-dd}'}"
-                                       FontSize="16" />
+                                       FontSize="14" />
                                 <Label Grid.Column="1"
                                        Text="{Binding Mid, StringFormat='{0:N4} PLN'}"
-                                       FontSize="16" TextColor="#3B82F6"
+                                       FontSize="14" TextColor="#3B82F6"
                                        HorizontalOptions="End" />
                             </Grid>
                         </Frame>

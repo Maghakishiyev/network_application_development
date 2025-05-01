@@ -21,6 +21,7 @@
             <converters:RateToValueConverter x:Key="RateToValueConverter" />
             <converters:AccountBalanceConverter x:Key="AccountBalanceConverter" />
             <converters:TransactionTypeColorConverter x:Key="TransactionTypeColorConverter" />
+            <converters:BoolConverter x:Key="BoolConverter" />
 
             <!-- Common styles -->
             <Style x:Key="OutlineButton" TargetType="Button">

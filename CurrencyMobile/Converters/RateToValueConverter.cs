@@ -8,9 +8,28 @@ namespace CurrencyMobile.Converters
     {
         public override object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
         {
-            if (value is decimal rate && parameter is string currencyCode)
+            if (value is decimal rate && parameter != null)
             {
-                // Return a tuple of (currency, formattedRate)
+                string currencyCode;
+                
+                // Handle string parameters 
+                if (parameter is string code)
+                {
+                    currencyCode = code;
+                }
+                else
+                {
+                    // For any other parameter type, just use its string representation
+                    currencyCode = parameter.ToString() ?? "???";
+                }
+                
+                // For PLN which is the base currency
+                if (currencyCode == "PLN")
+                {
+                    return (currencyCode, 1.0m);
+                }
+                
+                // For other currencies, return the appropriate tuple
                 return (currencyCode, rate);
             }
             return ("???", 0m);

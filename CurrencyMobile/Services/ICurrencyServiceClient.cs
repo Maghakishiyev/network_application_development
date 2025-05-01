@@ -6,6 +6,8 @@ namespace CurrencyMobile.Services
 {
     public interface ICurrencyServiceClient
     {
+        Task<UserDto> AuthenticateAsync(string email, string password);
+        Task<UserDto> RegisterUserAsync(string email, string password);
         Task<decimal> GetCurrentRateAsync(string code);
         Task<RateDto[]> GetHistoricalRatesAsync(string code, DateTime start, DateTime end);
         Task<BuySellDto> GetBuySellRateAsync(string code);

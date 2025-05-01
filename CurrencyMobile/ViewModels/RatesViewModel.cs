@@ -33,13 +33,13 @@ namespace CurrencyMobile.ViewModels
         private decimal _currentRate;
 
         [ObservableProperty]
-        private BuySellDto _buySellRate;
+        private BuySellDto _buySellRate = new();
 
         [ObservableProperty]
         private bool _isRefreshing;
 
         [ObservableProperty]
-        private string _errorMessage;
+        private string _errorMessage = string.Empty;
 
         [ObservableProperty]
         private bool _isError;
@@ -129,6 +129,24 @@ namespace CurrencyMobile.ViewModels
             if (!string.IsNullOrEmpty(value))
             {
                 LoadCurrentRateCommand.Execute(null);
+                LoadHistoricalRatesCommand.Execute(null);
+            }
+        }
+        
+        partial void OnStartDateChanged(DateTime value)
+        {
+            // When start date changes, reload historical data
+            if (!string.IsNullOrEmpty(SelectedCurrency))
+            {
+                LoadHistoricalRatesCommand.Execute(null);
+            }
+        }
+        
+        partial void OnEndDateChanged(DateTime value)
+        {
+            // When end date changes, reload historical data
+            if (!string.IsNullOrEmpty(SelectedCurrency))
+            {
                 LoadHistoricalRatesCommand.Execute(null);
             }
         }

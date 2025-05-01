@@ -22,7 +22,7 @@ namespace CurrencyMobile.ViewModels
         private bool _isRefreshing;
 
         [ObservableProperty]
-        private string _errorMessage;
+        private string _errorMessage = string.Empty;
 
         [ObservableProperty]
         private bool _isError;
@@ -87,7 +87,7 @@ namespace CurrencyMobile.ViewModels
     public partial class CurrencyBalance : ObservableObject
     {
         [ObservableProperty]
-        private string _currencyCode;
+        private string _currencyCode = string.Empty;
 
         [ObservableProperty]
         private decimal _amount;
